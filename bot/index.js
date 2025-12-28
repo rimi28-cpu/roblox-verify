@@ -1,6 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Partials } = require('discord.js');
-const db = require('./db.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -8,18 +7,13 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages
-    ],
-    partials: [Partials.Channel, Partials.Message, Partials.User]
+    ]
 });
 
 const VERIFY_CHANNEL_ID = process.env.DISCORD_VERIFY_CHANNEL_ID;
 
-client.once('ready', async () => {
+client.once('ready', () => {
     console.log(`✅ Bot logged in as ${client.user.tag}`);
-    console.log(`📊 Serving ${client.guilds.cache.size} servers`);
-    
-    // Register slash commands
-    await registerCommands();
 });
 
 // When user joins
@@ -36,9 +30,10 @@ client.on('guildMemberAdd', async (member) => {
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
-    const { commandName, user, channel, member } = interaction;
-
-    if (commandName === 'verify') {
+    if (interaction.commandName === 'verify') {
+        const { user, channel } = interaction;
+        
+        // Check if in correct channel
         if (channel.id !== VERIFY_CHANNEL_ID) {
             return interaction.reply({
                 content: `Please use this command in the <#${VERIFY_CHANNEL_ID}> channel.`,
@@ -47,57 +42,15 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         try {
-            // Check if already verified
-            const isVerified = await db.isVerified(user.id);
-            if (isVerified) {
-                const info = await db.getVerificationInfo(user.id);
-                return interaction.reply({
-                    content: `You are already verified as **${info.roblox_username}**!`,
-                    ephemeral: true
-                });
-            }
-            
             await sendVerificationMessage(user);
             await interaction.reply({
                 content: 'Check your DMs for the verification link!',
                 ephemeral: true
             });
         } catch (error) {
-            console.error('Verify command error:', error);
+            console.error('Failed to send DM:', error);
             await interaction.reply({
                 content: 'Failed to send DM. Please make sure your DMs are open.',
-                ephemeral: true
-            });
-        }
-    }
-
-    if (commandName === 'status') {
-        try {
-            const info = await db.getVerificationInfo(user.id);
-            
-            if (!info) {
-                return interaction.reply({
-                    content: 'You are not verified yet. Use `/verify` to get started!',
-                    ephemeral: true
-                });
-            }
-            
-            const embed = new EmbedBuilder()
-                .setTitle('🔐 Verification Status')
-                .setColor(0x5865F2)
-                .addFields(
-                    { name: 'Roblox Account', value: info.roblox_username, inline: true },
-                    { name: 'Roblox ID', value: info.roblox_id, inline: true },
-                    { name: 'Verified Since', value: new Date(info.verified_at).toLocaleDateString(), inline: true }
-                )
-                .setFooter({ text: 'Bloxlink Verification' })
-                .setTimestamp();
-                
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-        } catch (error) {
-            console.error('Status command error:', error);
-            await interaction.reply({
-                content: 'Failed to fetch status. Please try again.',
                 ephemeral: true
             });
         }
@@ -106,12 +59,7 @@ client.on('interactionCreate', async (interaction) => {
 
 // Send verification message
 async function sendVerificationMessage(user) {
-    const crypto = require('crypto');
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    
-    // Store session in database
-    await db.createSession(user.id, verificationToken);
-    
+    const verificationToken = generateToken(user.id);
     const verificationLink = `${process.env.BASE_URL}/verify.html?token=${verificationToken}&discord_id=${user.id}`;
 
     const embed = new EmbedBuilder()
@@ -139,8 +87,15 @@ async function sendVerificationMessage(user) {
     }
 }
 
+function generateToken(userId) {
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const timestamp = Date.now();
+    return `${token}_${timestamp}_${userId}`;
+}
+
 // Register slash commands
-async function registerCommands() {
+client.once('ready', async () => {
     const { REST, Routes } = require('discord.js');
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     
@@ -148,10 +103,6 @@ async function registerCommands() {
         {
             name: 'verify',
             description: 'Get verification link to link your Roblox account'
-        },
-        {
-            name: 'status',
-            description: 'Check your verification status'
         }
     ];
     
@@ -164,11 +115,10 @@ async function registerCommands() {
     } catch (error) {
         console.error('Failed to register commands:', error);
     }
-}
+});
 
 // Error handling
 client.on('error', console.error);
-client.on('warn', console.warn);
 process.on('unhandledRejection', console.error);
 
 // Login
