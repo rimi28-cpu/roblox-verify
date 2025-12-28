@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Partials } = require('discord.js');
-const { query } = require('../api/db/neon.js');
+const db = require('./db.js');
 
 const client = new Client({
     intents: [
@@ -12,7 +12,6 @@ const client = new Client({
     partials: [Partials.Channel, Partials.Message, Partials.User]
 });
 
-// Verification channel ID
 const VERIFY_CHANNEL_ID = process.env.DISCORD_VERIFY_CHANNEL_ID;
 
 client.once('ready', async () => {
@@ -23,26 +22,13 @@ client.once('ready', async () => {
     await registerCommands();
 });
 
-// When user joins server
+// When user joins
 client.on('guildMemberAdd', async (member) => {
     try {
-        // Check if user is already verified
-        const existing = await query(
-            'SELECT * FROM linked_accounts WHERE discord_id = $1 AND is_verified = TRUE',
-            [member.id]
-        );
-        
-        if (existing.length > 0) {
-            // User is already verified, assign roles
-            await assignVerifiedRoles(member);
-            return;
-        }
-        
-        // Send verification message
         await sendVerificationMessage(member.user);
         console.log(`📩 Sent verification to new member: ${member.user.tag}`);
     } catch (error) {
-        console.error('Failed to handle new member:', error);
+        console.error('Failed to send verification:', error);
     }
 });
 
@@ -53,7 +39,6 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, user, channel, member } = interaction;
 
     if (commandName === 'verify') {
-        // Check if in correct channel
         if (channel.id !== VERIFY_CHANNEL_ID) {
             return interaction.reply({
                 content: `Please use this command in the <#${VERIFY_CHANNEL_ID}> channel.`,
@@ -63,14 +48,11 @@ client.on('interactionCreate', async (interaction) => {
 
         try {
             // Check if already verified
-            const existing = await query(
-                'SELECT * FROM linked_accounts WHERE discord_id = $1 AND is_verified = TRUE',
-                [user.id]
-            );
-            
-            if (existing.length > 0) {
+            const isVerified = await db.isVerified(user.id);
+            if (isVerified) {
+                const info = await db.getVerificationInfo(user.id);
                 return interaction.reply({
-                    content: `You are already verified as **${existing[0].roblox_username}**!`,
+                    content: `You are already verified as **${info.roblox_username}**!`,
                     ephemeral: true
                 });
             }
@@ -91,30 +73,22 @@ client.on('interactionCreate', async (interaction) => {
 
     if (commandName === 'status') {
         try {
-            const result = await query(
-                `SELECT la.*, 
-                 (SELECT COUNT(*) FROM server_links WHERE discord_user_id = $1) as server_count
-                 FROM linked_accounts la 
-                 WHERE la.discord_id = $1`,
-                [user.id]
-            );
+            const info = await db.getVerificationInfo(user.id);
             
-            if (result.length === 0) {
+            if (!info) {
                 return interaction.reply({
                     content: 'You are not verified yet. Use `/verify` to get started!',
                     ephemeral: true
                 });
             }
             
-            const account = result[0];
             const embed = new EmbedBuilder()
                 .setTitle('🔐 Verification Status')
                 .setColor(0x5865F2)
                 .addFields(
-                    { name: 'Roblox Account', value: account.roblox_username, inline: true },
-                    { name: 'Verified Since', value: new Date(account.linked_at).toLocaleDateString(), inline: true },
-                    { name: 'Linked Servers', value: account.server_count.toString(), inline: true },
-                    { name: 'Status', value: account.is_verified ? '✅ Verified' : '❌ Not Verified', inline: true }
+                    { name: 'Roblox Account', value: info.roblox_username, inline: true },
+                    { name: 'Roblox ID', value: info.roblox_id, inline: true },
+                    { name: 'Verified Since', value: new Date(info.verified_at).toLocaleDateString(), inline: true }
                 )
                 .setFooter({ text: 'Bloxlink Verification' })
                 .setTimestamp();
@@ -128,64 +102,17 @@ client.on('interactionCreate', async (interaction) => {
             });
         }
     }
-
-    if (commandName === 'getrole') {
-        try {
-            // Check if user is verified
-            const result = await query(
-                'SELECT * FROM linked_accounts WHERE discord_id = $1 AND is_verified = TRUE',
-                [user.id]
-            );
-            
-            if (result.length === 0) {
-                return interaction.reply({
-                    content: 'You need to verify your account first! Use `/verify` to get started.',
-                    ephemeral: true
-                });
-            }
-            
-            // Assign verified role
-            const role = interaction.guild.roles.cache.find(r => r.name === 'Verified');
-            if (role) {
-                await member.roles.add(role);
-                await interaction.reply({
-                    content: `✅ Successfully assigned the Verified role!`,
-                    ephemeral: true
-                });
-            } else {
-                await interaction.reply({
-                    content: 'Verified role not found on this server.',
-                    ephemeral: true
-                });
-            }
-        } catch (error) {
-            console.error('Getrole command error:', error);
-            await interaction.reply({
-                content: 'Failed to assign role. Please contact an administrator.',
-                ephemeral: true
-            });
-        }
-    }
 });
 
-// Function to send verification embed
+// Send verification message
 async function sendVerificationMessage(user) {
-    const verificationToken = generateToken(user.id);
-    const verificationLink = `${process.env.VERIFICATION_SITE_URL}/verify.html?token=${verificationToken}&discord_id=${user.id}`;
-
-    // Store verification session in database
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const crypto = require('crypto');
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     
-    await query(
-        `INSERT INTO verification_sessions (discord_id, session_token, expires_at, status) 
-         VALUES ($1, $2, $3, 'pending')
-         ON CONFLICT (discord_id) 
-         DO UPDATE SET 
-           session_token = EXCLUDED.session_token,
-           expires_at = EXCLUDED.expires_at,
-           status = 'pending'`,
-        [user.id, verificationToken, expiresAt]
-    );
+    // Store session in database
+    await db.createSession(user.id, verificationToken);
+    
+    const verificationLink = `${process.env.BASE_URL}/verify.html?token=${verificationToken}&discord_id=${user.id}`;
 
     const embed = new EmbedBuilder()
         .setTitle('🔐 Verify Your Roblox Account')
@@ -212,26 +139,7 @@ async function sendVerificationMessage(user) {
     }
 }
 
-// Helper functions
-function generateToken(userId) {
-    const crypto = require('crypto');
-    const token = crypto.randomBytes(32).toString('hex');
-    const timestamp = Date.now();
-    return `${token}_${timestamp}_${userId}`;
-}
-
-async function assignVerifiedRoles(member) {
-    try {
-        const role = member.guild.roles.cache.find(r => r.name === 'Verified');
-        if (role) {
-            await member.roles.add(role);
-            console.log(`✅ Assigned Verified role to ${member.user.tag}`);
-        }
-    } catch (error) {
-        console.error('Failed to assign roles:', error);
-    }
-}
-
+// Register slash commands
 async function registerCommands() {
     const { REST, Routes } = require('discord.js');
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -244,10 +152,6 @@ async function registerCommands() {
         {
             name: 'status',
             description: 'Check your verification status'
-        },
-        {
-            name: 'getrole',
-            description: 'Get your verified roles after linking account'
         }
     ];
     
