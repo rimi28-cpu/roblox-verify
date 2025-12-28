@@ -1,17 +1,16 @@
 require('dotenv').config();
-const { initializeDatabase } = require('../src/api/db/schema.js');
+const { initDatabase } = require('../src/lib/database.js');
 
 async function setup() {
   try {
-    console.log('🚀 Setting up Neon database...');
+    console.log('🚀 Setting up database schema...');
     
-    await initializeDatabase();
+    await initDatabase();
     
     console.log('✅ Database setup complete!');
     console.log('\n📋 Next steps:');
     console.log('1. Run your bot: npm start');
     console.log('2. Deploy to Vercel: vercel deploy');
-    console.log('3. Configure environment variables in Vercel dashboard');
     
     process.exit(0);
   } catch (error) {
@@ -20,9 +19,4 @@ async function setup() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  setup();
-}
-
-module.exports = { setup };
+setup();
