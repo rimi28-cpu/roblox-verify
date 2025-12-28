@@ -8,11 +8,6 @@
     {
       "src": "public/**/*",
       "use": "@vercel/static"
-    },
-    {
-      "src": "src/bot/index.js",
-      "use": "@vercel/node",
-      "config": { "maxDuration": 60 }
     }
   ],
   "routes": [
@@ -21,20 +16,8 @@
       "dest": "/src/api/$1.js"
     },
     {
-      "src": "/bot",
-      "dest": "/src/bot/index.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "src/api/**/*.js": {
-      "maxDuration": 10
-    }
-  }
+  ]
 }
