@@ -9,10 +9,6 @@ const commands = [
     {
         name: 'status',
         description: 'Check your verification status'
-    },
-    {
-        name: 'getrole',
-        description: 'Get your verified roles after linking account'
     }
 ];
 
