@@ -1,88 +1,76 @@
-import { query } from './db/neon.js';
-import { logVerificationAttempt } from './db/queries.js';
+import { query } from '../lib/database.js';
 
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Verify webhook secret (optional)
-  const webhookSecret = req.headers['x-webhook-secret'];
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
     const { type, data } = req.body;
     
     switch (type) {
-      case 'discord_verification':
-        // Handle Discord verification webhook
-        await handleDiscordVerification(data);
-        break;
-        
-      case 'roblox_login':
-        // Handle Roblox login webhook
-        await handleRobloxLogin(data);
+      case 'verification':
+        await handleVerification(data);
         break;
         
       case 'server_link':
-        // Handle server linking webhook
         await handleServerLink(data);
         break;
         
       default:
         console.log('Unknown webhook type:', type);
     }
-
-    res.json({ success: true, message: 'Webhook processed' });
-
+    
+    res.json({ success: true });
+    
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('Webhook error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-async function handleDiscordVerification(data) {
-  const { discordId, discordUsername, action, details } = data;
+async function handleVerification(data) {
+  const { discordId, robloxUsername, action, details, ip } = data;
   
-  await logVerificationAttempt(
-    discordId,
-    null, // robloxUsername
-    data.ip,
-    data.userAgent,
-    action,
-    details
+  await query(
+    `INSERT INTO verification_logs (discord_id, roblox_username, ip_address, action, details) 
+     VALUES ($1, $2, $3, $4, $5)`,
+    [discordId, robloxUsername, ip, action, details]
   );
-  
-  console.log(`Discord verification: ${discordUsername} (${discordId}) - ${action}`);
-}
-
-async function handleRobloxLogin(data) {
-  const { username, discordId, ip, userAgent } = data;
-  
-  await logVerificationAttempt(
-    discordId,
-    username,
-    ip,
-    userAgent,
-    'webhook_received',
-    'Credentials received via webhook'
-  );
-  
-  console.log(`Roblox login webhook: ${username} for Discord ${discordId}`);
 }
 
 async function handleServerLink(data) {
-  const { discordUserId, discordServerId, robloxUserId } = data;
+  const { discordId, serverId, robloxId } = data;
   
-  await query(
-    `INSERT INTO server_links (discord_user_id, discord_server_id, roblox_user_id) 
-     VALUES ($1, $2, $3) 
-     ON CONFLICT (discord_user_id, discord_server_id) 
-     DO UPDATE SET roblox_user_id = EXCLUDED.roblox_user_id`,
-    [discordUserId, discordServerId, robloxUserId]
+  // Get current linked servers
+  const result = await query(
+    `SELECT linked_servers FROM linked_accounts WHERE discord_id = $1`,
+    [discordId]
   );
   
-  console.log(`Server link: User ${discordUserId} linked to server ${discordServerId}`);
+  if (result.length > 0) {
+    let linkedServers = result[0].linked_servers || [];
+    if (!Array.isArray(linkedServers)) linkedServers = [];
+    
+    // Add server if not already linked
+    if (!linkedServers.includes(serverId)) {
+      linkedServers.push(serverId);
+      
+      await query(
+        `UPDATE linked_accounts SET linked_servers = $1 WHERE discord_id = $2`,
+        [JSON.stringify(linkedServers), discordId]
+      );
+    }
+  }
 }
