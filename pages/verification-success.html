@@ -3,38 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Complete</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}.success-container{width:100%;max-width:500px;background:white;border-radius:16px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}.success-icon{width:80px;height:80px;background:linear-gradient(135deg,#4caf50,#2e7d32);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 30px;font-size:40px;color:white;animation:pulse 2s infinite}@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}.success-title{font-size:32px;font-weight:700;color:#333;margin-bottom:15px}.username-display{color:#00a2ff;font-weight:600;font-size:24px;margin-bottom:20px}.verification-details{background:#f5f5f5;border-radius:10px;padding:20px;margin-bottom:30px;text-align:left}.detail-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e0e0e0}.detail-item:last-child{border-bottom:none}.detail-label{color:#666;font-weight:500}.detail-value{color:#333;font-weight:600}.continue-button{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:transform .3s;width:100%;margin-top:20px}.continue-button:hover{transform:translateY(-2px)}</style>
+    <title>Verification Successful</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+        .success-icon { width: 80px; height: 80px; background: #4caf50; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; font-size: 40px; color: white; }
+        h1 { font-size: 32px; font-weight: 700; color: #333; margin-bottom: 15px; }
+        .username { color: #00a2ff; font-weight: 600; font-size: 24px; margin: 20px 0; }
+        .details { background: #f5f5f5; border-radius: 10px; padding: 20px; margin: 30px 0; text-align: left; }
+        .detail-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+        .detail-item:last-child { border-bottom: none; }
+        .continue-button { background: #5865F2; color: white; border: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 20px; }
+    </style>
 </head>
 <body>
-    <div class="success-container">
+    <div class="container">
         <div class="success-icon">✓</div>
-        <h1 class="success-title">Account Verified!</h1>
-        <div class="username-display" id="verifiedUsername"></div>
-        <div class="verification-details">
+        <h1>Account Verified!</h1>
+        <div class="username" id="verifiedUsername"></div>
+        
+        <div class="details">
             <div class="detail-item">
-                <span class="detail-label">Roblox Username:</span>
-                <span class="detail-value" id="displayUsername"></span>
+                <span>Roblox Username:</span>
+                <strong id="displayUsername"></strong>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Status:</span>
-                <span class="detail-value" style="color:#4caf50">Verified ✓</span>
+                <span>Status:</span>
+                <strong style="color:#4caf50">Verified ✓</strong>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Method:</span>
-                <span class="detail-value">Direct Login</span>
+                <span>Timestamp:</span>
+                <strong id="timestamp"></strong>
             </div>
         </div>
-        <p style="color:#666;margin-bottom:30px">Your account has been successfully verified and is ready to link with Discord servers.</p>
+        
         <button class="continue-button" onclick="continueToServers()">Continue to Server Selection →</button>
     </div>
+    
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('username') || 'Verified User';
+        const username = urlParams.get('username') || localStorage.getItem('roblox_username') || 'User';
         
         document.getElementById('verifiedUsername').textContent = username;
         document.getElementById('displayUsername').textContent = username;
-        localStorage.setItem('account_verified', 'true');
+        document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
         
         function continueToServers() {
             window.location.href = 'select-servers.html';
