@@ -17,8 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/pages/$1",
-      "continue": true
+      "dest": "/pages/$1"
     }
   ]
 }
