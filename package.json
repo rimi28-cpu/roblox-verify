@@ -1,24 +1,17 @@
 {
-  "name": "roblox-verify",
+  "name": "bloxlink-verification",
   "version": "1.0.0",
-  "description": "Discord bot for Roblox account verification",
-  "main": "src/bot/index.js",
   "scripts": {
-    "start": "node src/bot/index.js",
-    "dev": "nodemon src/bot/index.js",
+    "start": "node bot/index.js",
+    "dev": "nodemon bot/index.js",
     "deploy-commands": "node scripts/deploy-commands.js",
-    "setup-db": "node scripts/setup-database.js",
     "vercel-dev": "vercel dev"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "@neondatabase/serverless": "^0.9.0",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
