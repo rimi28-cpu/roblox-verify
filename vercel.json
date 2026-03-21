@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://queenly-paterfamiliar-adah.ngrok-free.dev/api/:path*" }
+  ]
+}
